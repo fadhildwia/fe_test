@@ -1,10 +1,98 @@
-import React from 'react'
+/* eslint-disable react-hooks/rules-of-hooks */
+import ModalRuas from '@/components/modal/ModalRuas';
+import useDeleteRuas from '@/hooks/useDeleteRuas';
+import useGetAllRuas, { AllRuasInterface } from '@/hooks/useGetAllRuas';
+import React, { useState } from 'react'
+import { useQueryClient } from 'react-query';
+
+export const TITLE_HEADER = [
+  { title: 'Ruas' },
+  { title: 'Lokasi' },
+  { title: 'Foto' },
+  { title: 'Document' },
+  { title: 'Unit Kerja' },
+  { title: 'Status' },
+];
 
 const index = () => {
+  const queryClient = useQueryClient();
+
+  const [params, setParams] = useState<{ page: number; per_page: number; }>({ page: 1, per_page: 5 });
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const { data: allRuas } = useGetAllRuas({ params });
+
+  const { mutateAsync: mutateDeleteRuas } = useDeleteRuas({
+    onSuccess: (res) => {
+      queryClient.invalidateQueries('useGetAllRuas');
+    }
+  });
+
+  const handleNextPage = () => {
+    if (allRuas?.next_page_url) {
+      setParams({ ...params, page: params.page + 1 });
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (allRuas?.prev_page_url) {
+      setParams({ ...params, page: params.page - 1 });
+    }
+  };
+
+  const handleChangePage = (page: number) => {
+    setParams({ ...params, page });
+  };
+
+  const renderItems = (items: AllRuasInterface[]) => (
+    <>
+      {items?.map((item, index) => (
+        <tr key={index} className={`odd:bg-white even:bg-gray-50 border-b`}>
+          <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+            {item.ruas_name}
+          </th>
+          <td className="px-6 py-4 whitespace-nowrap">{`${item.km_awal} s/d ${item.km_akhir}`}</td>
+          <td className="px-6 py-4">
+            <div
+              onClick={() => { console.log(item.photo_url) }}
+              className="text-gray-900 w-20 focus:outline-non cursor-pointer bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 rounded-lg px-3 py-2 text-xs font-medium text-center"
+            >
+              Lihat
+            </div>
+          </td>
+          <td className="px-6 py-4">
+            <div
+              onClick={() => { console.log(item.doc_url) }}
+              className="text-gray-900 w-20 focus:outline-non cursor-pointer bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 rounded-lg px-3 py-2 text-xs font-medium text-center"
+            >
+              Download
+            </div>
+          </td>
+          <td className="px-6 py-4">Unit Kerja {item.unit_id}</td>
+          <td className="px-6 py-4">{item.status === '1' ? 'Aktif' : 'Tidak Aktif'}</td>
+          <td className="px-6 py-4 flex gap-2 justify-evenly">
+            <div
+              onClick={() => { }}
+              className="font-medium text-blue-600 hover:underline cursor-pointer"
+            >
+              Edit
+            </div>
+            <div
+              onClick={() => mutateDeleteRuas(Number(item.id))}
+              className="font-medium text-red-600 hover:underline cursor-pointer"
+            >
+              Delete
+            </div>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+
   return (
     <div className="px-4 md:px-10 mx-auto flex flex-col md:mt-24 gap-5">
       <button
         type="button"
+        onClick={() => setShowModal(true)}
         className="text-gray-900 w-20 focus:outline-non
         bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4
         focus:ring-gray-100 rounded-lg px-3 py-2 text-xs font-medium text-center"
@@ -13,121 +101,20 @@ const index = () => {
       </button>
       <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
         <table className="w-full text-sm text-left rtl:text-right text-gray-500">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 ">
+          <thead className="text-xs text-center text-gray-700 uppercase bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3">
-                Product name
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Color
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Category
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Price
-              </th>
+              {TITLE_HEADER.map((item, index) => (
+                <th key={index} scope="col" className="px-6 py-3">
+                  {item.title}
+                </th>
+              ))}
               <th scope="col" className="px-6 py-3">
                 Action
               </th>
             </tr>
           </thead>
-          <tbody>
-            <tr className="odd:bg-white even:bg-gray-50 border-b">
-              <th
-                scope="row"
-                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-              >
-                Apple MacBook Pro 17
-              </th>
-              <td className="px-6 py-4">Silver</td>
-              <td className="px-6 py-4">Laptop</td>
-              <td className="px-6 py-4">$2999</td>
-              <td className="px-6 py-4">
-                <a
-                  href="#"
-                  className="font-medium text-blue-600 hover:underline"
-                >
-                  Edit
-                </a>
-              </td>
-            </tr>
-            <tr className="odd:bg-white even:bg-gray-50 border-b">
-              <th
-                scope="row"
-                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-              >
-                Microsoft Surface Pro
-              </th>
-              <td className="px-6 py-4">White</td>
-              <td className="px-6 py-4">Laptop PC</td>
-              <td className="px-6 py-4">$1999</td>
-              <td className="px-6 py-4">
-                <a
-                  href="#"
-                  className="font-medium text-blue-600 hover:underline"
-                >
-                  Edit
-                </a>
-              </td>
-            </tr>
-            <tr className="odd:bg-white even:bg-gray-50 border-b">
-              <th
-                scope="row"
-                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-              >
-                Magic Mouse 2
-              </th>
-              <td className="px-6 py-4">Black</td>
-              <td className="px-6 py-4">Accessories</td>
-              <td className="px-6 py-4">$99</td>
-              <td className="px-6 py-4">
-                <a
-                  href="#"
-                  className="font-medium text-blue-600 hover:underline"
-                >
-                  Edit
-                </a>
-              </td>
-            </tr>
-            <tr className="odd:bg-white even:bg-gray-50 border-b">
-              <th
-                scope="row"
-                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-              >
-                Google Pixel Phone
-              </th>
-              <td className="px-6 py-4">Gray</td>
-              <td className="px-6 py-4">Phone</td>
-              <td className="px-6 py-4">$799</td>
-              <td className="px-6 py-4">
-                <a
-                  href="#"
-                  className="font-medium text-blue-600 hover:underline"
-                >
-                  Edit
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <th
-                scope="row"
-                className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-              >
-                Apple Watch 5
-              </th>
-              <td className="px-6 py-4">Red</td>
-              <td className="px-6 py-4">Wearables</td>
-              <td className="px-6 py-4">$999</td>
-              <td className="px-6 py-4">
-                <a
-                  href="#"
-                  className="font-medium text-blue-600 hover:underline"
-                >
-                  Edit
-                </a>
-              </td>
-            </tr>
+          <tbody className="text-center">
+            {renderItems(allRuas?.data || [])}
           </tbody>
         </table>
       </div>
@@ -135,28 +122,36 @@ const index = () => {
       <nav className="text-right">
         <ul className="inline-flex -space-x-px text-sm">
           <li>
-            <a href="#" className="flex items-center justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700">Previous</a>
+            <div
+              onClick={handlePrevPage}
+              className="flex items-center cursor-pointer justify-center px-3 h-8 ms-0 leading-tight text-gray-500 bg-white border border-e-0 border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700"
+            >
+              Previous
+            </div>
           </li>
+
+          {allRuas?.links.filter((_, index) => index !== 0 && index !== allRuas.links.length - 1).map((link, index) => (
+            <li key={index}>
+              <div
+                onClick={() => handleChangePage(Number(link.label))}
+                className={`flex items-center cursor-pointer justify-center px-3 h-8 leading-tight text-gray-500 bg-white border ${link.active ? 'border-gray-300 bg-gray-300' : 'border-gray-300 rounded'} hover:bg-gray-100 hover:text-gray-700`}
+              >
+                {link.label}
+              </div>
+            </li>
+          ))}
+
           <li>
-            <a href="#" className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700">1</a>
-          </li>
-          <li>
-            <a href="#" className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700">2</a>
-          </li>
-          <li>
-            <a href="#" aria-current="page" className="flex items-center justify-center px-3 h-8 text-blue-600 border border-gray-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700">3</a>
-          </li>
-          <li>
-            <a href="#" className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700">4</a>
-          </li>
-          <li>
-            <a href="#" className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700">5</a>
-          </li>
-          <li>
-            <a href="#" className="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700">Next</a>
+            <div
+              onClick={handleNextPage}
+              className="flex items-center cursor-pointer justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700"
+            >
+              Next
+            </div>
           </li>
         </ul>
       </nav>
+      <ModalRuas showModal={showModal} setShowModal={setShowModal} />
     </div>
   )
 }

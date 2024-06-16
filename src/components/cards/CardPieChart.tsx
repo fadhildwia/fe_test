@@ -1,7 +1,12 @@
 import * as React from 'react';
 import { PieChart } from '@mui/x-charts/PieChart';
+import { UnitInterface } from '@/hooks/useGetAllUnitKerja';
 
-export default function CardPieChart() {
+interface CardPieChartProps {
+  data: UnitInterface[]
+}
+
+export default function CardPieChart({ data }: CardPieChartProps) {
   return (
     <PieChart
       series={[
