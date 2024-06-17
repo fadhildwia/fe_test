@@ -1,12 +1,13 @@
+import { appCookies } from "@/hooks/appCookies";
+import usePostLogout from "@/hooks/usePostLogout";
 import { createPopper } from "@popperjs/core";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import React from "react";
 
-interface UserDropdownProps {
-  onLogout: () => void;
-}
-
-export const UserDropdown = ({ onLogout }: UserDropdownProps) => {
+export const UserDropdown = () => {
+  const router = useRouter();
+  const { setCookie } = appCookies();
 
   const [dropdownPopoverShow, setDropdownPopoverShow] = React.useState(false);
   const btnDropdownRef = React.createRef<HTMLAnchorElement>();
@@ -23,12 +24,22 @@ export const UserDropdown = ({ onLogout }: UserDropdownProps) => {
     setDropdownPopoverShow(false);
   };
 
+  const { mutate: postLogout } = usePostLogout({
+    onSuccess(res) {
+      setCookie({
+        name: 'access_token',
+        value: ''
+      });
+      router.replace('/login');
+    },
+  });
+
+
   return (
     <>
-      <a
-        className="block"
+      <div
+        className="fixed top-2 right-4 z-10"
         onClick={(e) => {
-          e.preventDefault();
           dropdownPopoverShow ? closeDropdownPopover() : openDropdownPopover();
         }}
       >
@@ -41,7 +52,7 @@ export const UserDropdown = ({ onLogout }: UserDropdownProps) => {
             />
           </span>
         </div>
-      </a>
+      </div>
 
       <div
         ref={popoverDropdownRef}
@@ -57,7 +68,7 @@ export const UserDropdown = ({ onLogout }: UserDropdownProps) => {
           }
           onClick={(e) => {
             e.preventDefault();
-            onLogout();
+            postLogout();
           }}
         >
           Logout
