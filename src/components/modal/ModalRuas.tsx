@@ -1,21 +1,45 @@
+import useGetRuas from '@/hooks/useGetRuas';
 import usePostRuas from '@/hooks/usePostRuas';
+import usePostUpdateRuas from '@/hooks/usePostUpdateRuas';
 import { useFormik } from 'formik';
 import React, { ChangeEvent } from 'react'
 import { useQueryClient } from 'react-query';
 import * as Yup from 'yup';
 
 interface ModalRuasProps {
-  setShowModal: (data: boolean) => void;
+  onCloseModal: () => void;
   showModal: boolean;
+  id?: string | number;
+  isNew: boolean
 }
 
-const ModalRuas = ({ setShowModal, showModal }: ModalRuasProps) => {
+const ModalRuas = ({ onCloseModal, showModal, id, isNew }: ModalRuasProps) => {
   const queryClient = useQueryClient();
+
+  const { data: ruas } = useGetRuas({
+    id: id as string,
+    options: {
+      enabled: !!id
+    }
+  });
 
   const { mutate: postRuas } = usePostRuas({
     onSuccess(res) {
       if(res.status) {
-        setShowModal(false);
+        onCloseModal();
+        formik.resetForm();
+        queryClient.invalidateQueries('useGetAllRuas');
+      }
+    },
+    onError(error) {
+      formik.setFieldError('message', error.response?.data.message[0])
+    }
+  });
+
+  const { mutate: postUpdateRuas } = usePostUpdateRuas({
+    onSuccess(res) {
+      if(res.status) {
+        onCloseModal();
         formik.resetForm();
         queryClient.invalidateQueries('useGetAllRuas');
       }
@@ -50,20 +74,21 @@ const ModalRuas = ({ setShowModal, showModal }: ModalRuasProps) => {
 
   const formik = useFormik({
     initialValues: {
-      unit_id: '',
-      ruas_name: '',
-      long: '',
-      km_awal: '',
-      km_akhir: '',
-      status: false,
-      photo: '',
-      file: '',
+      unit_id: ruas?.data.unit_id || '',
+      ruas_name: ruas?.data.ruas_name || '',
+      long: ruas?.data.long || '',
+      km_awal: ruas?.data.km_awal || '',
+      km_akhir: ruas?.data.km_akhir || '',
+      status: ruas?.data.status || true,
+      photo: ruas?.data.photo_url || '',
+      file: ruas?.data.doc_url || '',
       message: undefined,
     },
     validationSchema: PostRuasSchema,
+    enableReinitialize: true,
     onSubmit: async (values) => {
       const formData = new FormData();
-      formData.append('unit_id', values.unit_id);
+      formData.append('unit_id', String(values.unit_id));
       formData.append('ruas_name', values.ruas_name);
       formData.append('long', String(values.long));
       formData.append('km_awal', values.km_awal);
@@ -72,7 +97,12 @@ const ModalRuas = ({ setShowModal, showModal }: ModalRuasProps) => {
       formData.append('photo', values.photo);
       formData.append('file', values.file);
 
-      await postRuas(formData);
+      if (isNew) {
+        await postRuas(formData);
+      } else {
+        formData.append('_method', 'PUT');
+        await postUpdateRuas({ id: id as string, formData });
+      }
     },
   });
 
@@ -87,7 +117,7 @@ const ModalRuas = ({ setShowModal, showModal }: ModalRuasProps) => {
                   <h3 className="text-3xl font-semibold">Data Ruas</h3>
                   <button
                     className="p-1 ml-auto bg-transparent border-0 text-black opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
-                    onClick={() => setShowModal(false)}
+                    onClick={() => onCloseModal()}
                   >
                     <span className="bg-transparent text-black opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">×</span>
                   </button>
@@ -97,85 +127,114 @@ const ModalRuas = ({ setShowModal, showModal }: ModalRuasProps) => {
                 )}
                 <form onSubmit={formik.handleSubmit}>
                   <div className="relative p-6 flex flex-col gap-5">
-                    <div>
-                      <input
-                        type="number"
-                        placeholder="Unit Id"
-                        className="border border-gray-300 rounded-md p-2"
-                        value={formik.values.unit_id}
-                        onChange={formik.handleChange}
-                        name="unit_id"
-                      />
-                      {formik.errors.unit_id && (
-                        <div className="text-red-600 text-xs">{formik.errors.unit_id}</div>
-                      )}
+                    <div className='flex gap-5'>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900" htmlFor="unit_id">
+                          Unit Id
+                        </label>
+                        <input
+                          type="number"
+                          id="unit_id"
+                          placeholder="Unit Id"
+                          className="border border-gray-300 rounded-md p-2"
+                          value={formik.values.unit_id}
+                          onChange={formik.handleChange}
+                          name="unit_id"
+                        />
+                        {formik.errors.unit_id && (
+                          <div className="text-red-600 text-xs">{formik.errors.unit_id}</div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900" htmlFor="ruas_name">
+                          Ruas Name
+                        </label>
+                        <input
+                          type="text"
+                          id="ruas_name"
+                          placeholder="Ruas Name"
+                          className="border border-gray-300 rounded-md p-2"
+                          value={formik.values.ruas_name}
+                          onChange={formik.handleChange}
+                          name="ruas_name"
+                        />
+                        {formik.errors.ruas_name && (
+                          <div className="text-red-600 text-xs">{formik.errors.ruas_name}</div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Ruas Name"
-                        className="border border-gray-300 rounded-md p-2"
-                        value={formik.values.ruas_name}
-                        onChange={formik.handleChange}
-                        name="ruas_name"
-                      />
-                      {formik.errors.ruas_name && (
-                        <div className="text-red-600 text-xs">{formik.errors.ruas_name}</div>
-                      )}
+                    <div className='flex gap-5'>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900" htmlFor="long">
+                          Long
+                        </label>
+                        <input
+                          type="number"
+                          id="long"
+                          placeholder="Long"
+                          className="border border-gray-300 rounded-md p-2"
+                          value={formik.values.long}
+                          onChange={formik.handleChange}
+                          name="long"
+                        />
+                        {formik.errors.long && (
+                          <div className="text-red-600 text-xs">{formik.errors.long}</div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900" htmlFor="km_awal">
+                          KM Awal
+                        </label>
+                        <input
+                          type="text"
+                          id="km_awal"
+                          placeholder="KM Awal"
+                          className="border border-gray-300 rounded-md p-2"
+                          value={formik.values.km_awal}
+                          onChange={formik.handleChange}
+                          name="km_awal"
+                        />
+                        {formik.errors.km_awal && (
+                          <div className="text-red-600 text-xs">{formik.errors.km_awal}</div>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <input
-                        type="number"
-                        placeholder="Long"
-                        className="border border-gray-300 rounded-md p-2"
-                        value={formik.values.long}
-                        onChange={formik.handleChange}
-                        name="long"
-                      />
-                      {formik.errors.long && (
-                        <div className="text-red-600 text-xs">{formik.errors.long}</div>
-                      )}
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="KM Awal"
-                        className="border border-gray-300 rounded-md p-2"
-                        value={formik.values.km_awal}
-                        onChange={formik.handleChange}
-                        name="km_awal"
-                      />
-                      {formik.errors.km_awal && (
-                        <div className="text-red-600 text-xs">{formik.errors.km_awal}</div>
-                      )}
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="KM Akhir"
-                        className="border border-gray-300 rounded-md p-2"
-                        value={formik.values.km_akhir}
-                        onChange={formik.handleChange}
-                        name="km_akhir"
-                      />
-                      {formik.errors.km_akhir && (
-                        <div className="text-red-600 text-xs">{formik.errors.km_akhir}</div>
-                      )}
-                    </div>
-                    <div>
-                      <select
-                        id="status"
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                        value={formik.values.status ? '1' : '0'}
-                        onChange={formik.handleChange}
-                        name="status"
-                      >
-                        <option value="1">Aktif</option>
-                        <option value="0">Non Aktif</option>
-                      </select>
-                      {formik.errors.status && (
-                        <div className="text-red-600 text-xs">{formik.errors.status}</div>
-                      )}
+                    <div className='flex gap-5'>
+                      <div>
+                        <label className="block mb-2 text-sm font-medium text-gray-900" htmlFor="km_akhir">
+                          KM Akhir
+                        </label>
+                        <input
+                          type="text"
+                          id="km_akhir"
+                          placeholder="KM Akhir"
+                          className="border border-gray-300 rounded-md p-2"
+                          value={formik.values.km_akhir}
+                          onChange={formik.handleChange}
+                          name="km_akhir"
+                        />
+                        {formik.errors.km_akhir && (
+                          <div className="text-red-600 text-xs">{formik.errors.km_akhir}</div>
+                        )}
+                      </div>
+                      <div className='w-full'>
+                        <label className="block mb-2 text-sm font-medium text-gray-900" htmlFor="status">
+                          Status
+                        </label>
+                        <select
+                          id="status"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                          value={formik.values.status ? '1' : '0'}
+                          onChange={formik.handleChange}
+                          name="status"
+                        >
+                          <option value="1">Aktif</option>
+                          <option value="0">Non Aktif</option>
+                        </select>
+                        {formik.errors.status && (
+                          <div className="text-red-600 text-xs">{formik.errors.status}</div>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <label className="block mb-2 text-sm font-medium text-gray-900" htmlFor="photo_input">
@@ -213,7 +272,7 @@ const ModalRuas = ({ setShowModal, showModal }: ModalRuasProps) => {
                       className="text-red-500 background-transparent font-bold uppercase px-4 py-1 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                       type="button"
                       onClick={() => {
-                        setShowModal(false);
+                        onCloseModal();
                         formik.resetForm();
                       }}
                     >

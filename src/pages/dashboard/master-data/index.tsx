@@ -14,11 +14,23 @@ export const TITLE_HEADER = [
   { title: 'Status' },
 ];
 
+interface ShowModalInterface {
+  isShow: boolean;
+  id?: string | number;
+  isNew: boolean;
+}
+
+const initModal: ShowModalInterface = {
+  isShow: false,
+  id: '',
+  isNew: true
+}
+
 const index = () => {
   const queryClient = useQueryClient();
 
   const [params, setParams] = useState<{ page: number; per_page: number; }>({ page: 1, per_page: 5 });
-  const [showModal, setShowModal] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<ShowModalInterface>(initModal);
   const { data: allRuas } = useGetAllRuas({ params });
 
   const { mutateAsync: mutateDeleteRuas } = useDeleteRuas({
@@ -42,6 +54,10 @@ const index = () => {
   const handleChangePage = (page: number) => {
     setParams({ ...params, page });
   };
+
+  const handleChangePerPage = (e: React.ChangeEvent<any>) => {
+    setParams({ page: 1, per_page: e.target.value })
+  }
 
   const renderItems = (items: AllRuasInterface[]) => (
     <>
@@ -71,7 +87,7 @@ const index = () => {
           <td className="px-6 py-4">{item.status === '1' ? 'Aktif' : 'Tidak Aktif'}</td>
           <td className="px-6 py-4 flex gap-2 justify-evenly">
             <div
-              onClick={() => { }}
+              onClick={() => setShowModal({ isShow: true, isNew: false, id: item.id })}
               className="font-medium text-blue-600 hover:underline cursor-pointer"
             >
               Edit
@@ -92,7 +108,7 @@ const index = () => {
     <div className="px-4 md:px-10 mx-auto flex flex-col md:mt-24 gap-5">
       <button
         type="button"
-        onClick={() => setShowModal(true)}
+        onClick={() => setShowModal({ ...showModal, isShow: true, isNew: true })}
         className="text-gray-900 w-20 focus:outline-non
         bg-white border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4
         focus:ring-gray-100 rounded-lg px-3 py-2 text-xs font-medium text-center"
@@ -119,7 +135,17 @@ const index = () => {
         </table>
       </div>
 
-      <nav className="text-right">
+      <nav className="flex justify-end gap-2">
+        <select
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block px-2.5"
+          value={params.per_page}
+          onChange={handleChangePerPage}
+          name="perPage"
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={15}>15</option>
+        </select>
         <ul className="inline-flex -space-x-px text-sm">
           <li>
             <div
@@ -134,7 +160,7 @@ const index = () => {
             <li key={index}>
               <div
                 onClick={() => handleChangePage(Number(link.label))}
-                className={`flex items-center cursor-pointer justify-center px-3 h-8 leading-tight text-gray-500 bg-white border ${link.active ? 'border-gray-300 bg-gray-300' : 'border-gray-300 rounded'} hover:bg-gray-100 hover:text-gray-700`}
+                className={`flex items-center cursor-pointer justify-center px-3 h-8 leading-tight text-gray-500 bg-white border ${link.active ? 'border-gray-300 bg-gray-400' : 'border-gray-300 rounded'} hover:bg-gray-100 hover:text-gray-700`}
               >
                 {link.label}
               </div>
@@ -151,7 +177,7 @@ const index = () => {
           </li>
         </ul>
       </nav>
-      <ModalRuas showModal={showModal} setShowModal={setShowModal} />
+      <ModalRuas showModal={showModal.isShow} id={showModal.id} isNew={showModal.isNew} onCloseModal={() => setShowModal(initModal)} />
     </div>
   )
 }

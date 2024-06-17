@@ -1,18 +1,6 @@
 import { AxiosError } from 'axios';
 import { useMutation, UseMutationOptions } from 'react-query';
 import axiosInstance from './axios.config';
-import { ResponseLoginInterface } from '@/types/UserInterface';
-
-interface RuasData {
-  unit_id: string;
-  ruas_name: string;
-  long: string;
-  km_awal: string;
-  km_akhir: string;
-  status: boolean;
-  photo: File;
-  file: File;
-}
 
 export const postRuas = async (
   formData: FormData

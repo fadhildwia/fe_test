@@ -34,6 +34,10 @@ const Index = () => {
     setParams({ ...params, page });
   };
 
+  const handleChangePerPage = (e: React.ChangeEvent<any>) => {
+    setParams({ page: 1, per_page: e.target.value })
+  }
+
   const renderItems = (items: AllRuasInterface[]) => (
     <>
       {items?.map((item, index) => (
@@ -93,7 +97,17 @@ const Index = () => {
         </table>
       </div>
 
-      <nav className="text-right">
+      <nav className="flex justify-end gap-2">
+        <select
+          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block px-2.5"
+          value={params.per_page}
+          onChange={handleChangePerPage}
+          name="perPage"
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={15}>15</option>
+        </select>
         <ul className="inline-flex -space-x-px text-sm">
           <li>
             <div
@@ -108,7 +122,7 @@ const Index = () => {
             <li key={index}>
               <div
                 onClick={() => handleChangePage(Number(link.label))}
-                className={`flex items-center cursor-pointer justify-center px-3 h-8 leading-tight text-gray-500 bg-white border ${link.active ? 'border-gray-300 bg-gray-300' : 'border-gray-300 rounded'} hover:bg-gray-100 hover:text-gray-700`}
+                className={`flex items-center cursor-pointer justify-center px-3 h-8 leading-tight text-gray-500 bg-white border ${link.active ? 'border-gray-300 bg-gray-400' : 'border-gray-300 rounded'} hover:bg-gray-100 hover:text-gray-700`}
               >
                 {link.label}
               </div>

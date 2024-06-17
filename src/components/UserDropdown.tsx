@@ -1,19 +1,16 @@
 import { createPopper } from "@popperjs/core";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import React from "react";
 
 interface UserDropdownProps {
   onLogout: () => void;
 }
 
-const UserDropdown = ({ onLogout }: UserDropdownProps) => {
-  const router = useRouter();
+export const UserDropdown = ({ onLogout }: UserDropdownProps) => {
 
   const [dropdownPopoverShow, setDropdownPopoverShow] = React.useState(false);
   const btnDropdownRef = React.createRef<HTMLAnchorElement>();
   const popoverDropdownRef = React.createRef<HTMLDivElement>();
-
 
   const openDropdownPopover = () => {
     createPopper(btnDropdownRef.current, popoverDropdownRef.current, {
@@ -69,5 +66,3 @@ const UserDropdown = ({ onLogout }: UserDropdownProps) => {
     </>
   );
 };
-
-export default UserDropdown;
